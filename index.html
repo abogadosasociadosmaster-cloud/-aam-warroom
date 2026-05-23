@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AAM26 · Mega Estructura</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════
+       PANTALLA DE ACCESO (LOGIN CYBER GLOW)
+       ══════════════════════════════════════════ -->
+  <div id="login-screen" class="screen">
+    <div class="login-box">
+      <div class="login-logo">MEGA<span>ESTRUCTURA</span></div>
+      <div class="login-subtitle">AAM26 · Control Panel v3</div>
+      
+      <div class="field-group">
+        <label class="login-label">Email del Operador</label>
+        <input type="email" id="login-email" placeholder="operador@estudio.com" autocomplete="email">
+      </div>
+      
+      <button class="btn-solid" id="btn-login" style="width: 100%; justify-content: center; height: 50px;">
+        🔒 INGRESAR AL COLECTOR
+      </button>
+      
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SHELL DE APLICACIÓN UNIFICADA (COCKPIT)
+       ══════════════════════════════════════════ -->
+  <div id="app" class="screen hidden">
+
+    <!-- ── SIDEBAR CON GLOW ── -->
+    <nav id="sidebar">
+      <div class="brand">
+        <div class="brand-name">AAM<span>26</span></div>
+        <div class="brand-sub">Mega Estructura</div>
+      </div>
+
+      <div id="user-info">
+        <div class="user-name" id="user-nombre">Cargando Operador...</div>
+        <div><span class="user-rol" id="user-rol">ROL</span></div>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item active" data-view="ops">
+          <span class="nav-icon">📁</span>
+          <span>Módulo Operativo</span>
+          <span class="badge" id="badge-ops">0</span>
+        </li>
+        <li class="nav-item" data-view="revisiones" id="nav-revisiones">
+          <span class="nav-icon">🔍</span>
+          <span>Revisiones Pendientes</span>
+          <span class="badge warning" id="badge-revisiones" style="display: none;">0</span>
+        </li>
+        <li class="nav-item" data-view="legal">
+          <span class="nav-icon">⚖</span>
+          <span>Módulo Legal (Plazos)</span>
+          <span class="badge danger" id="badge-legal-alertas">0</span>
+        </li>
+        <li class="nav-item" data-view="contable">
+          <span class="nav-icon">💰</span>
+          <span>Módulo Contable</span>
+        </li>
+        <li class="nav-item" data-view="auditoria">
+          <span class="nav-icon">📝</span>
+          <span>Bitácora & CRM</span>
+        </li>
+      </ul>
+
+      <div class="nav-footer">
+        <a href="https://mev.jus.mendoza.gov.ar" target="_blank" class="nav-link-ext">
+          <span>MEV Mendoza</span> <span>↗</span>
+        </a>
+        <a href="https://wwwnoti.jus.mendoza.gov.ar/listas/proveidos/resultados.php" target="_blank" class="nav-link-ext">
+          <span>Notificaciones Jud.</span> <span>↗</span>
+        </a>
+        <button class="btn-solid" id="btn-nueva-causa-sidebar" style="margin-top: 10px; width: 100%; justify-content: center;">
+          ➕ NUEVA CAUSA
+        </button>
+        <button class="btn-outline" id="btn-recargar-datos" style="width: 100%; justify-content: center; font-size: 11px;">
+          ⟳ REFRESCAR SISTEMA
+        </button>
+      </div>
+
+      <div id="status-bar" class="ok">
+        <span class="status-dot"></span>
+        <span id="status-text">Conectado a GAS API V43</span>
+      </div>
+    </nav>
+
+    <!-- ── PANEL PRINCIPAL ── -->
+    <main id="main-content">
+
+      <!-- ── CABECERA COMPACTA INTEGRADA (COCKPIT HEADER) ── -->
+      <header class="cockpit-header">
+        <div class="header-title-section">
+          <h2 id="view-title-main">Workspace</h2>
+          <span class="view-subtitle" id="view-subtitle-main">Matriz General Operativa</span>
+        </div>
+
+        <div class="header-search-section">
+          <div class="search-wrapper">
+            <input type="text" id="global-search-input" placeholder="Buscar cliente, ID, DNI, reclamada...">
+          </div>
+        </div>
+
+        <div class="header-actions-section">
+          <!-- Canal Directo rápido -->
+          <button class="btn-wa-header" id="btn-canal-directo" onclick="abrirLinkCanalDirecto()" title="Chat de WhatsApp del Expediente Abierto">
+            💬 CHAT CLIENTE
+          </button>
+          
+          <!-- Modo Director (Supervisión) -->
+          <button class="btn-director-header" id="btn-director-mode" onclick="toggleDirectorMode()" title="Desbloquear datos financieros confidenciales">
+            🔑 SUPERVISOR
+          </button>
+        </div>
+      </header>
+
+      <!-- ══════════════════════════════════════════
+           VISTA: MÓDULO OPERATIVO (OPS)
+           ══════════════════════════════════════════ -->
+      <div id="view-ops" class="view active">
+        <div class="view-header-row">
+          <div class="filters-panel">
+            <select id="filter-ops-abogado">
+              <option value="">[ TODOS LOS ABOGADOS ]</option>
+            </select>
+            <select id="filter-ops-estado">
+              <option value="">[ TODOS LOS ESTADOS ]</option>
+            </select>
+            <select id="filter-ops-aseguradora">
+              <option value="">[ TODAS LAS CIA ]</option>
+            </select>
+          </div>
+          <button class="btn-solid" id="btn-nueva-causa-ops">➕ NUEVO EXPEDIENTE</button>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table class="responsive-table-mobile">
+              <thead>
+                <tr>
+                  <th>ID Causa</th>
+                  <th>Cliente</th>
+                  <th>Cía Reclamada</th>
+                  <th>Estado</th>
+                  <th>Semáforo</th>
+                  <th>Días</th>
+                  <th>Responsable</th>
+                  <th style="text-align: right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-ops">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 40px; color: var(--gold);">
+                    ⚙️ Sincronizando Matriz Operativa...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VISTA REVISIONES PENDIENTES ── -->
+      <div id="view-revisiones" class="view">
+        <div class="view-container" style="padding: 20px;">
+          <div class="table-container" style="background-color: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-lg);">
+            <table class="main-table">
+              <thead>
+                <tr>
+                  <th style="width: 100px;">ID CAUSA</th>
+                  <th style="width: 250px;">CLIENTE</th>
+                  <th>DOCUMENTO EN REVISIÓN</th>
+                  <th style="width: 240px; text-align: center;">ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-revisiones">
+                <!-- Se rellena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           VISTA: MÓDULO LEGAL (PLAZOS)
+           ══════════════════════════════════════════ -->
+      <div id="view-legal" class="view">
+        <div class="view-header-row" style="margin-bottom: 20px;">
+          <div class="filters-panel" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); width: 100%;">
+            <select id="filter-legal-abogado">
+              <option value="">[ TODOS LOS ABOGADOS ]</option>
+            </select>
+            <select id="filter-legal-semaforo">
+              <option value="">[ TODOS LOS SEMÁFOROS ]</option>
+              <option value="ROJO">🔴 URGENTES (ROJO)</option>
+              <option value="AMARILLO">🟡 ATENCIÓN (AMARILLO)</option>
+              <option value="VERDE">🟢 AL DÍA (VERDE)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tarjetas de Alertas de Vencimiento -->
+        <div class="alert-card-grid" id="legal-alert-grid">
+          <!-- Dinámico -->
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           VISTA: MÓDULO CONTABLE (FINANCIERO)
+           ══════════════════════════════════════════ -->
+      <div id="view-contable" class="view">
+        <!-- KPIs de Caja Blindados con degradados vivos -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-proyectado">
+            <span class="kpi-label">Proyectado (Ofertas)</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-total-ofertado">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-total-ofertado-mask">Reservado</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-ingresos">
+            <span class="kpi-label">Ingresos Totales (Caja)</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-total-ingresos">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-total-ingresos-mask">Reservado</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-gastos">
+            <span class="kpi-label">Gastos del Estudio</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-total-gastos">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-total-gastos-mask">Reservado</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-neto">
+            <span class="kpi-label">Caja Neta (Estudio)</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-total-neto">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-total-neto-mask">Reservado</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table class="responsive-table-mobile">
+              <thead>
+                <tr>
+                  <th>ID Causa</th>
+                  <th>Cliente</th>
+                  <th>Estado</th>
+                  <th style="text-align: right;">Cobrado Admin</th>
+                  <th style="text-align: right;">Cobrado Jud</th>
+                  <th style="text-align: right;">Gastos</th>
+                  <th style="text-align: right;">Ingresos Estudio</th>
+                  <th style="text-align: right;">Resultado Neto</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-contable">
+                <!-- Carga dinámica con enmascaramiento -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           VISTA: BITÁCORA Y CRM (AUDITORÍA)
+           ══════════════════════════════════════════ -->
+      <div id="view-auditoria" class="view">
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table class="responsive-table-mobile">
+              <thead>
+                <tr>
+                  <th>ID Causa</th>
+                  <th>Fecha/Hora</th>
+                  <th>Operador</th>
+                  <th>Tipo Evento</th>
+                  <th>Descripción del Registro</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-auditoria">
+                <!-- Carga dinámica -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PANEL LATERAL CORREDIZO TABULADO (DRAWER DE FICHA)
+       ══════════════════════════════════════════ -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawerFicha()"></div>
+  
+  <div class="drawer" id="drawer-ficha">
+    <div class="drawer-header">
+      <div class="drawer-header-title">
+        <h3 id="drawer-title-nombre">EXPEDIENTE</h3>
+        <span id="drawer-title-id">ID: —</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span class="sem-badge sem-VERDE" id="drawer-semaforo" style="margin-right: 6px;">VERDE</span>
+        <span class="status-chip" id="drawer-estado">ESTADO</span>
+        <button class="btn-outline" style="border: none; font-size: 18px; padding: 4px 10px; cursor: pointer; color: var(--text-muted);" onclick="closeDrawerFicha()">✕</button>
+      </div>
+    </div>
+
+    <!-- PESTAÑAS LOCALES DEL DRAWER (Cyber Tabs) -->
+    <div class="drawer-tabs">
+      <button type="button" class="drawer-tab active" data-tab="identidad">👤 Identidad</button>
+      <button type="button" class="drawer-tab" data-tab="proceso">⚖️ Proceso</button>
+      <button type="button" class="drawer-tab" data-tab="contable">💰 Contabilidad</button>
+      <button type="button" class="drawer-tab" data-tab="archivos">📂 Drive</button>
+      <button type="button" class="drawer-tab" data-tab="crm">💬 CRM Novedades</button>
+    </div>
+
+    <div class="drawer-body">
+      <form id="drawer-form">
+        <input type="hidden" id="form-ID_CAUSA" name="ID_CAUSA">
+        
+        <!-- PESTAÑA: IDENTIDAD -->
+        <div class="drawer-tab-content active" id="tab-identidad">
+          <div class="drawer-section">
+            <div class="drawer-section-title">Identidad del Reclamante</div>
+            <div class="drawer-grid">
+              <div class="field-group drawer-grid-full">
+                <label>Nombre y Apellido del Cliente</label>
+                <input type="text" id="form-CLIENTE" name="CLIENTE" placeholder="Nombre completo del cliente">
+              </div>
+              <div class="field-group">
+                <label>DNI / Identificación</label>
+                <input type="text" id="form-DNI_NRO" name="DNI_NRO" placeholder="DNI del cliente">
+              </div>
+              <div class="field-group">
+                <label>Teléfono (WhatsApp)</label>
+                <input type="text" id="form-TELEFONO" name="TELEFONO" placeholder="ej: 261555555">
+              </div>
+              <div class="field-group drawer-grid-full">
+                <label>Email Cliente</label>
+                <input type="email" id="form-EMAIL_CLIENTE" name="EMAIL_CLIENTE" placeholder="cliente@correo.com">
+              </div>
+              <div class="field-group drawer-grid-full">
+                <label>Domicilio</label>
+                <input type="text" id="form-DOMICILIO" name="DOMICILIO" placeholder="Dirección física">
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-section" style="margin-top: 20px;">
+            <div class="drawer-section-title">Naturaleza del Caso</div>
+            <div class="drawer-grid">
+              <div class="field-group">
+                <label>Tipo de Causa</label>
+                <select id="form-TIPO_CAUSA" name="TIPO_CAUSA">
+                  <option value="SINIESTRO_VIAL">Siniestro Vial</option>
+                  <option value="ACCIDENTE_ART">Accidente ART</option>
+                  <option value="DAÑOS_PERJUICIOS">Daños y Perjuicios</option>
+                  <option value="SUCESION">Sucesión</option>
+                  <option value="FAMILIA">Familia</option>
+                  <option value="EJEC_HONORARIOS">Ejec. Honorarios</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Competencia</label>
+                <select id="form-COMPETENCIA" name="COMPETENCIA">
+                  <option value="MENDOZA">Mendoza (Civil/Laboral)</option>
+                  <option value="SAN_MARTIN">San Martín</option>
+                  <option value="SAN_RAFAEL">San Rafael</option>
+                  <option value="TUNUYAN">Tunuyán</option>
+                  <option value="CORDOBA">Córdoba</option>
+                  <option value="FEDERAL">Federal</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Reclamado A (Compañía)</label>
+                <input type="text" id="form-RECLAMADO_A" name="RECLAMADO_A" placeholder="Aseguradora o Empresa">
+              </div>
+              <div class="field-group">
+                <label>N° Siniestro / Denuncia</label>
+                <input type="text" id="form-NRO_SINIESTRO" name="NRO_SINIESTRO" placeholder="Nro identificador Cía">
+              </div>
+              <div class="field-group">
+                <label>Fecha Hecho</label>
+                <input type="date" id="form-FECHA_HECHO" name="FECHA_HECHO">
+              </div>
+              <div class="field-group">
+                <label>Monto Reclamo Estimado</label>
+                <input type="number" id="form-MONTO_RECLAMO" name="MONTO_RECLAMO" placeholder="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: PROCESO -->
+        <div class="drawer-tab-content" id="tab-proceso">
+          <div class="drawer-section">
+            <div class="drawer-section-title">Asignación y Estado</div>
+            <div class="drawer-grid">
+              <div class="field-group">
+                <label>Gestor Responsable</label>
+                <select id="form-GESTOR" name="GESTOR">
+                  <option value="">— SELECCIONAR GESTOR —</option>
+                  <option value="USR_001">Juan Manuel Barrionuevo</option>
+                  <option value="USR_002">Martin Barrionuevo</option>
+                  <option value="USR_003">Franco Puente</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Subestructura</label>
+                <select id="form-SUBESTRUCTURA" name="SUBESTRUCTURA">
+                  <option value="CENTRAL">CENTRAL</option>
+                  <option value="SUB_A">SUB_A (V. Blanco)</option>
+                  <option value="SUB_B">SUB_B (D. Armitano)</option>
+                  <option value="SUB_C">SUB_C (G. Rossel)</option>
+                  <option value="SUB_D">SUB_D (A. Agüero)</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Abogado Firmante</label>
+                <select id="form-ABOGADO" name="ABOGADO">
+                  <option value="">— SELECCIONAR ABOGADO —</option>
+                  <option value="USR_001">Juan Manuel Barrionuevo</option>
+                  <option value="USR_005">Daniel Armitano</option>
+                  <option value="USR_006">Guillermo Rossel</option>
+                  <option value="USR_007">Aristides Agüero</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Estado Procesal</label>
+                <select id="form-ESTADO" name="ESTADO" style="border-color: var(--gold);">
+                  <!-- Carga dinámica -->
+                </select>
+                <div id="form-ESTADO-suggestion" style="margin-top: 6px; display: none;"></div>
+              </div>
+              <div class="field-group drawer-grid-full">
+                <label>Número Expediente Judicial</label>
+                <input type="text" id="form-NRO_EXPEDIENTE" name="NRO_EXPEDIENTE" placeholder="Nro de expediente tribunal">
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-section" style="margin-top: 20px;">
+            <div class="drawer-section-title">Líneas de Tiempo (Hitos)</div>
+            <div class="drawer-grid">
+              <div class="field-group">
+                <label>Fecha Presentación Cía</label>
+                <input type="date" id="form-FECHA_PRESENTACION_CIA" name="FECHA_PRESENTACION_CIA">
+              </div>
+              <div class="field-group">
+                <label>Fecha Oferta Recibida</label>
+                <input type="date" id="form-FECHA_OFERTA" name="FECHA_OFERTA">
+              </div>
+              <div class="field-group">
+                <label>Fecha Cobro Admin (Efectiva)</label>
+                <input type="date" id="form-FECHA_COBRO_ADMIN" name="FECHA_COBRO_ADMIN">
+              </div>
+              <div class="field-group">
+                <label>Fecha Demanda Judicial</label>
+                <input type="date" id="form-FECHA_DEMANDA" name="FECHA_DEMANDA">
+              </div>
+              <div class="field-group">
+                <label>Fecha Contestación</label>
+                <input type="date" id="form-FECHA_CONTESTACION" name="FECHA_CONTESTACION">
+              </div>
+              <div class="field-group">
+                <label>Fecha Sentencia</label>
+                <input type="date" id="form-FECHA_SENTENCIA" name="FECHA_SENTENCIA">
+              </div>
+              <div class="field-group">
+                <label>Fecha Pago Jud (Real/Programada)</label>
+                <input type="date" id="form-FECHA_COBRO_JUD" name="FECHA_COBRO_JUD">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: CONTABLE -->
+        <div class="drawer-tab-content" id="tab-contable">
+          <div class="drawer-section">
+            <div class="drawer-section-title">Liquidación & Caja</div>
+            <div class="drawer-grid">
+              <div class="field-group">
+                <label>Monto Oferta ($)</label>
+                <input type="number" id="form-MONTO_OFERTA" name="MONTO_OFERTA" placeholder="0">
+              </div>
+              <div class="field-group">
+                <label>Monto Sentencia ($)</label>
+                <input type="number" id="form-MONTO_SENTENCIA" name="MONTO_SENTENCIA" placeholder="0">
+              </div>
+              <div class="field-group">
+                <label>Monto Cobrado Admin ($)</label>
+                <input type="number" id="form-MONTO_COBRADO_ADMIN" name="MONTO_COBRADO_ADMIN" placeholder="0">
+              </div>
+              <div class="field-group">
+                <label>Monto Cobrado Jud ($)</label>
+                <input type="number" id="form-MONTO_COBRADO_JUD" name="MONTO_COBRADO_JUD" placeholder="0">
+              </div>
+              <div class="field-group">
+                <label>% Pacto Cuota Litis</label>
+                <input type="text" id="form-PORCENTAJE_PACTO_CUOTA_LITIS" name="PORCENTAJE_PACTO_CUOTA_LITIS" placeholder="ej: 20">
+              </div>
+              <div class="field-group">
+                <label>Honorarios Pactados Admin ($)</label>
+                <input type="number" id="form-HONORARIOS_PACTADOS_ADMIN" name="HONORARIOS_PACTADOS_ADMIN" placeholder="0">
+              </div>
+              <div class="field-group">
+                <label>Gastos del Estudio ($)</label>
+                <input type="number" id="form-GASTOS_ESTUDIO" name="GASTOS_ESTUDIO" placeholder="0">
+              </div>
+              <div class="field-group">
+                <label>Total Gastos (Auto)</label>
+                <input type="text" id="form-TOTAL_GASTOS" name="TOTAL_GASTOS" readonly="readonly">
+              </div>
+              <div class="field-group">
+                <label>Ingresos Totales (Auto)</label>
+                <input type="text" id="form-TOTAL_INGRESOS_CAUSA" name="TOTAL_INGRESOS_CAUSA" readonly="readonly">
+              </div>
+              <div class="field-group">
+                <label>Resultado Neto (Auto)</label>
+                <input type="text" id="form-RESULTADO_NETO" name="RESULTADO_NETO" readonly="readonly">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: ARCHIVOS -->
+        <div class="drawer-tab-content" id="tab-archivos">
+          <div class="drawer-section">
+            <div class="drawer-section-title">Conexión Google Drive</div>
+            <div class="drawer-grid">
+              <div class="field-group drawer-grid-full">
+                <label>Enlace Carpeta de Expediente</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="form-URL_DRIVE" name="URL_DRIVE" readonly="readonly" placeholder="Generando automáticamente al guardar..." style="flex: 1;">
+                  <button type="button" class="btn-solid" id="btn-abrir-drive" style="padding: 0 16px;" onclick="abrirCarpetaDrive()">📂 ABRIR DRIVE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-section" style="margin-top: 20px;">
+            <div class="drawer-section-title">Checklist Documental Administrativo</div>
+            <div id="docs-checklist-container">
+              <!-- Checkboxes dinámicos -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: CRM NOVEDADES -->
+        <div class="drawer-tab-content" id="tab-crm">
+          <div class="drawer-section">
+            <div class="drawer-section-title">Nueva Comunicación / Novedad</div>
+            <div class="field-group drawer-grid-full">
+              <textarea id="form-BITACORA_NEW" rows="3" placeholder="Escribir novedad procesal o comentario..."></textarea>
+            </div>
+          </div>
+
+          <div class="drawer-section" style="margin-top: 20px;">
+            <div class="drawer-section-title">Historial de Bitácora</div>
+            <div class="crm-timeline" id="drawer-crm-timeline">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Acciones en el Footer del Drawer -->
+    <div class="drawer-footer">
+      <button class="btn-outline" onclick="closeDrawerFicha()">CANCELAR</button>
+      <button class="btn-wa" id="btn-wa-drawer" onclick="enviarReporteWhatsApp()" style="display: none;">💬 ENVIAR WHATSAPP</button>
+      <button class="btn-solid" id="btn-guardar-drawer" onclick="saveCausaData()">💾 GUARDAR EXPEDIENTE</button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast">Mensaje de Notificación</div>
+
+  <script src="app.js?v=20260522_v4"></script>
+</body>
+</html>

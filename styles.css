@@ -157,7 +157,7 @@ body { -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.5; }
   color: var(--text-muted);
   cursor: pointer;
   transition: var(--transition);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   border-left: 4px solid transparent;
 }
@@ -545,6 +545,37 @@ tbody tr:last-child td { border-bottom: none; }
   gap: 6px;
 }
 .btn-outline:hover { background: rgba(255, 255, 255, 0.02); border-color: var(--gold); }
+
+/* -- BOTONES EN NAV FOOTER (ESTANDARIZADOS Y DISTINGUIBLES) -- */
+.nav-footer button {
+  width: 100% !important;
+  height: 38px !important;
+  margin: 0 !important;
+  padding: 8px 12px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+
+.btn-wa-sidebar {
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: #fff !important;
+  border: none;
+  box-shadow: 0 4px 10px rgba(37, 211, 102, 0.15);
+}
+.btn-wa-sidebar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(37, 211, 102, 0.25);
+  filter: brightness(1.05);
+}
 
 /* ── VENTANA MODAL CENTRADA E ILUMINADA (CYBER MODAL CENTRADO) ── */
 .drawer {

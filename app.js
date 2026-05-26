@@ -668,11 +668,11 @@ function applyFiltersOps() {
   const filtered = STATE.causas.filter(c => {
     // Búsqueda libre
     if (term) {
-      const match = (c.CLIENTE || '').toLowerCase().includes(term) ||
-                    (c.ID || '').toLowerCase().includes(term) ||
-                    (c.DNI_NRO || '').toLowerCase().includes(term) ||
-                    (c.RECLAMADO_A || '').toLowerCase().includes(term) ||
-                    (c.BITACORA || '').toLowerCase().includes(term);
+      const match = String(c.CLIENTE || '').toLowerCase().includes(term) ||
+                    String(c.ID || '').toLowerCase().includes(term) ||
+                    String(c.DNI_NRO || '').toLowerCase().includes(term) ||
+                    String(c.RECLAMADO_A || '').toLowerCase().includes(term) ||
+                    String(c.BITACORA || '').toLowerCase().includes(term);
       if (!match) return false;
     }
 
@@ -736,9 +736,9 @@ function applyFiltersLegal() {
     if (!c.SEMAFORO) return false;
 
     if (term) {
-      const match = (c.CLIENTE || '').toLowerCase().includes(term) ||
-                    (c.ID || '').toLowerCase().includes(term) ||
-                    (c.NRO_EXPEDIENTE || '').toLowerCase().includes(term);
+      const match = String(c.CLIENTE || '').toLowerCase().includes(term) ||
+                    String(c.ID || '').toLowerCase().includes(term) ||
+                    String(c.NRO_EXPEDIENTE || '').toLowerCase().includes(term);
       if (!match) return false;
     }
 
@@ -803,8 +803,8 @@ function renderVistaContable() {
   // 1. Filtrar causas si hay búsqueda global
   const filteredCausas = STATE.causas.filter(c => {
     if (term) {
-      return (c.CLIENTE || '').toLowerCase().includes(term) ||
-             (c.ID || '').toLowerCase().includes(term);
+      return String(c.CLIENTE || '').toLowerCase().includes(term) ||
+             String(c.ID || '').toLowerCase().includes(term);
     }
     return true;
   });
@@ -914,10 +914,10 @@ function applyFiltersAudit() {
   // Filtrar
   if (term) {
     logs = logs.filter(l => {
-      return l.id.toLowerCase().includes(term) ||
-             l.cliente.toLowerCase().includes(term) ||
-             l.bitacora.toLowerCase().includes(term) ||
-             (l.abogado || '').toLowerCase().includes(term);
+      return String(l.id || '').toLowerCase().includes(term) ||
+             String(l.cliente || '').toLowerCase().includes(term) ||
+             String(l.bitacora || '').toLowerCase().includes(term) ||
+             String(l.abogado || '').toLowerCase().includes(term);
     });
   }
 

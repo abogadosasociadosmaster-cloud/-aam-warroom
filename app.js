@@ -704,9 +704,18 @@ function applyFiltersOps() {
       <td class="cell-cliente">${c.CLIENTE || '—'}</td>
       <td>${c.RECLAMADO_A || '—'}</td>
       <td>
-        <span class="status-chip" style="background: ${estadoObj.color}12; border-color: ${estadoObj.color}25; color: ${estadoObj.color}">
-          ${estadoObj.label}
-        </span>
+        ${c.ESTADO === 'PENDIENTE_DOCS' ? `
+          <span class="status-chip clickable-wa-status" 
+                style="background: ${estadoObj.color}12; border-color: ${estadoObj.color}25; color: ${estadoObj.color};"
+                onclick="event.stopPropagation(); window.solicitarFaltantesDesdeTabla('${c.ID}')"
+                title="Solicitar documentación faltante por WhatsApp">
+            ${estadoObj.label} 💬
+          </span>
+        ` : `
+          <span class="status-chip" style="background: ${estadoObj.color}12; border-color: ${estadoObj.color}25; color: ${estadoObj.color}">
+            ${estadoObj.label}
+          </span>
+        `}
       </td>
       <td><span class="sem-badge sem-${c.SEMAFORO || 'VERDE'}">${c.SEMAFORO || 'VERDE'}</span></td>
       <td style="font-family: var(--font-mono);">${dias} d</td>
@@ -1547,6 +1556,101 @@ function abrirLinkCanalDirecto() {
     // Si no hay causa abierta, abre WhatsApp Web general
     window.open(`https://web.whatsapp.com/`, '_blank');
   }
+}
+
+function ejecutarEnvioWhatsAppFaltantes(c, missing) {
+  if (missing.length === 0) {
+    showToast('Todos los documentos están completos.', 'warning');
+    return;
+  }
+
+  // 1. Armar link dinámico del portal
+  const portalBaseUrl = 'https://abogadosasociadosmaster-cloud.github.io/-aam-portal/';
+  let driveId = String(c.LINK_DOC || c.URL_DRIVE || '').trim();
+  const folderMatch = driveId.match(/folders\/([a-zA-Z0-9_-]+)/);
+  if (folderMatch) driveId = folderMatch[1];
+
+  const docsParam = missing.map(d => d.id).join('|');
+  const linkPortal = portalBaseUrl
+    + '?id=' + encodeURIComponent(c.ID)
+    + '&action=docs'
+    + '&nombre=' + encodeURIComponent(c.CLIENTE || '')
+    + '&estado=' + encodeURIComponent(c.ESTADO || 'INGRESADO')
+    + (driveId ? '&drive=' + encodeURIComponent(driveId) : '')
+    + (docsParam ? '&docs=' + encodeURIComponent(docsParam) : '');
+
+  // 2. Construir mensaje
+  const cli = c.CLIENTE || 'estimado cliente';
+  let msg = `Estimado/a *${cli}*,\n\n`;
+  msg += `Le escribimos de *AAM Abogados Asociados* en relación a su expediente *N° ${c.ID}*.\n\n`;
+  msg += `Para continuar con el trámite, requerimos que nos facilite la siguiente documentación pendiente:\n`;
+  
+  missing.forEach(d => {
+    msg += `• *${d.label}*\n`;
+  });
+  
+  msg += `\nPuede subir los archivos o fotos de manera rápida y segura desde su celular ingresando al siguiente enlace:\n`;
+  msg += `${linkPortal}\n\n`;
+  msg += `Quedamos a su disposición.\n*AAM · Gestión Jurídica*`;
+
+  const tel = formatTelefonoWA(c.TELEFONO);
+  const url = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  
+  // Registrar aviso en la bitácora de la causa mediante fetch rápido (POST)
+  const constancia = `\n[Recordatorio de documentación faltante enviado al cliente por WhatsApp el ${new Date().toLocaleString()}]`;
+  fetch(getApiEndpoint(), {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify({
+      action: 'editarCausa',
+      email: STATE.usuario.email,
+      idCausa: c.ID,
+      datos: { BITACORA: (c.BITACORA || '') + constancia }
+    })
+  });
+
+  window.open(url, '_blank');
+}
+
+window.solicitarFaltantesDesdeTabla = function(idCausa) {
+  const c = STATE.causas.find(x => x.ID === idCausa);
+  if (!c) return;
+  
+  const missing = [];
+  DOCS_LIST.forEach(doc => {
+    const val = c[doc.id] ? String(c[doc.id]).trim() : '';
+    const isRevision = val.startsWith('EN_REVISION');
+    const checked = (val !== '' && val !== 'FALTA' && val !== 'PENDIENTE' && !isRevision);
+    if (!checked) {
+      missing.push(doc);
+    }
+  });
+  
+  ejecutarEnvioWhatsAppFaltantes(c, missing);
+};
+
+function enviarFaltantesWhatsAppActual() {
+  if (!STATE.causaActual) return;
+  const c = STATE.causaActual;
+  
+  const missing = [];
+  DOCS_LIST.forEach(doc => {
+    const checkbox = document.querySelector(`input[name="${doc.id}"]`);
+    if (checkbox) {
+      if (!checkbox.checked) {
+        missing.push(doc);
+      }
+    } else {
+      const val = c[doc.id] ? String(c[doc.id]).trim() : '';
+      const isRevision = val.startsWith('EN_REVISION');
+      const checked = (val !== '' && val !== 'FALTA' && val !== 'PENDIENTE' && !isRevision);
+      if (!checked) {
+        missing.push(doc);
+      }
+    }
+  });
+  
+  ejecutarEnvioWhatsAppFaltantes(c, missing);
 }
 
 function abrirCarpetaDrive() {

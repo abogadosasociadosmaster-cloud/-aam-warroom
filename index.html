@@ -549,7 +549,12 @@
           </div>
 
           <div class="drawer-section" style="margin-top: 20px;">
-            <div class="drawer-section-title">Checklist Documental Administrativo</div>
+            <div class="drawer-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Checklist Documental Administrativo</span>
+              <button type="button" class="btn-wa" id="btn-wa-faltantes" onclick="enviarFaltantesWhatsAppActual()" style="padding: 4px 10px; font-size: 11px; margin: 0; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; height: 26px; border: none; cursor: pointer; color: #000; font-weight: 700;">
+                💬 Solicitar Pendientes
+              </button>
+            </div>
             <div id="docs-checklist-container">
               <!-- Checkboxes dinámicos -->
             </div>

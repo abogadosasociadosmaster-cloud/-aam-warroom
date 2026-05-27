@@ -1558,7 +1558,7 @@ function abrirLinkCanalDirecto() {
   }
 }
 
-function ejecutarEnvioWhatsAppFaltantes(c, missing) {
+async function ejecutarEnvioWhatsAppFaltantes(c, missing) {
   if (missing.length === 0) {
     showToast('Todos los documentos están completos.', 'warning');
     return;
@@ -1579,6 +1579,19 @@ function ejecutarEnvioWhatsAppFaltantes(c, missing) {
     + (driveId ? '&drive=' + encodeURIComponent(driveId) : '')
     + (docsParam ? '&docs=' + encodeURIComponent(docsParam) : '');
 
+  // Intentar acortar el link llamando a la API
+  let linkFinal = linkPortal;
+  showToast('Generando enlace corto...', 'warning');
+  try {
+    const res = await fetch(getApiEndpoint(`action=shorten&url=${encodeURIComponent(linkPortal)}`));
+    const data = await res.json();
+    if (data && data.status === 'success' && data.shortUrl) {
+      linkFinal = data.shortUrl;
+    }
+  } catch (err) {
+    console.error('Error al acortar link:', err);
+  }
+
   // 2. Construir mensaje
   const cli = c.CLIENTE || 'estimado cliente';
   let msg = `Estimado/a *${cli}*,\n\n`;
@@ -1590,7 +1603,7 @@ function ejecutarEnvioWhatsAppFaltantes(c, missing) {
   });
   
   msg += `\nPuede subir los archivos o fotos de manera rápida y segura desde su celular ingresando al siguiente enlace:\n`;
-  msg += `${linkPortal}\n\n`;
+  msg += `${linkFinal}\n\n`;
   msg += `Quedamos a su disposición.\n*AAM · Gestión Jurídica*`;
 
   const tel = formatTelefonoWA(c.TELEFONO);

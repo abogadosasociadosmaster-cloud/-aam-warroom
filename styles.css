@@ -8,11 +8,11 @@
 
 :root {
   /* -- PALETA CYBER-CLARITY (MÁS CLARA, VIVA Y LEGIBLE) -- */
-  --bg-page:        #0b0f17; /* Negro carbón mate de alta absorción */
-  --bg-surface:     #161d2b; /* Gris grafito texturado */
-  --bg-surface-alt: #212a3f; /* Gris de entrada para inputs */
-  --bg-sidebar:     #080c12; /* Sidebar negro profundo */
-  --bg-header:      #101520; /* Cabecera del cockpit unificada */
+  --bg-page:        #09090b; /* Negro carbón puro */
+  --bg-surface:     #18181b; /* Gris grafito/zinc oscuro */
+  --bg-surface-alt: #27272a; /* Gris zinc medio para inputs */
+  --bg-sidebar:     #09090b; /* Sidebar a juego con el fondo */
+  --bg-header:      #18181b; /* Cabecera unificada */
   
   --primary:        #2563eb; /* Azul Cobalto Nórdico */
   --gold:           #ffd700; /* Oro Noble */
@@ -20,10 +20,10 @@
   --purple:         #8b5cf6; /* Violeta financiero */
   
   --text-main:      #ffffff; /* Blanco puro */
-  --text-muted:     #cbd5e1; /* Gris claro */
-  --text-dim:       #94a3b8; /* Gris medio slate */
+  --text-muted:     #e4e4e7; /* Zinc claro */
+  --text-dim:       #a1a1aa; /* Zinc medio */
   
-  --border:         rgba(255, 255, 255, 0.08); /* Bordes finos pizarra */
+  --border:         rgba(255, 255, 255, 0.06); /* Bordes sutiles */
   --border-focus:   #2563eb;
 
   /* -- PLAZOS / ALERTAS (NEÓN GLOW) -- */

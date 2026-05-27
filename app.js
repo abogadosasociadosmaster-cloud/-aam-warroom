@@ -1234,7 +1234,7 @@ function fetchCrmTimeline(idCausa) {
   const isLocal = (window.location.port === '8100' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   if (isLocal) {
-    fetch(getApiEndpoint(`action=getInteracciones&idCausa=${idCausa}&_t=${Date.now()}`))
+    fetch(getApiEndpoint(`email=${encodeURIComponent(STATE.usuario.email)}&action=getInteracciones&idCausa=${idCausa}&_t=${Date.now()}`))
       .then(res => res.json())
       .then(response => {
         if (response && response.status === 'success') {
@@ -1261,7 +1261,7 @@ function fetchCrmTimeline(idCausa) {
 
     const script = document.createElement('script');
     script.id = cb;
-    script.src = getApiEndpoint(`action=getInteracciones&idCausa=${idCausa}&callback=${cb}`);
+    script.src = getApiEndpoint(`email=${encodeURIComponent(STATE.usuario.email)}&action=getInteracciones&idCausa=${idCausa}&callback=${cb}`);
     document.head.appendChild(script);
   }
 }
@@ -1583,7 +1583,7 @@ async function ejecutarEnvioWhatsAppFaltantes(c, missing) {
   let linkFinal = linkPortal;
   showToast('Generando enlace corto...', 'warning');
   try {
-    const res = await fetch(getApiEndpoint(`action=shorten&url=${encodeURIComponent(linkPortal)}`));
+    const res = await fetch(getApiEndpoint(`email=${encodeURIComponent(STATE.usuario.email)}&action=shorten&url=${encodeURIComponent(linkPortal)}`));
     const data = await res.json();
     if (data && data.status === 'success' && data.shortUrl) {
       linkFinal = data.shortUrl;

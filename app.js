@@ -1573,46 +1573,17 @@ async function ejecutarEnvioWhatsAppFaltantes(c, missing) {
     return;
   }
 
-  // 1. Armar link dinámico del portal
+  // 1. Armar link dinámico del portal (simplificado y súper corto)
   const portalBaseUrl = 'https://abogadosasociadosmaster-cloud.github.io/-aam-portal/';
-  let driveId = String(c.LINK_DOC || c.URL_DRIVE || '').trim();
-  const folderMatch = driveId.match(/folders\/([a-zA-Z0-9_-]+)/);
-  if (folderMatch) driveId = folderMatch[1];
+  const linkPortal = portalBaseUrl + '?id=' + encodeURIComponent(c.ID);
 
-  const docsParam = missing.map(d => d.id).join('|');
-  const linkPortal = portalBaseUrl
-    + '?id=' + encodeURIComponent(c.ID)
-    + '&action=docs'
-    + '&nombre=' + encodeURIComponent(c.CLIENTE || '')
-    + '&estado=' + encodeURIComponent(c.ESTADO || 'INGRESADO')
-    + (driveId ? '&drive=' + encodeURIComponent(driveId) : '')
-    + (docsParam ? '&docs=' + encodeURIComponent(docsParam) : '');
-
-  // Intentar acortar el link llamando a la API
-  let linkFinal = linkPortal;
-  showToast('Generando enlace corto...', 'warning');
-  try {
-    const data = await apiGet(`email=${encodeURIComponent(STATE.usuario.email)}&action=shorten&url=${encodeURIComponent(linkPortal)}`);
-    if (data && data.status === 'success' && data.shortUrl) {
-      linkFinal = data.shortUrl;
-    }
-  } catch (err) {
-    console.error('Error al acortar link:', err);
-  }
-
-  // 2. Construir mensaje
+  // 2. Construir mensaje súper profesional y corto
   const cli = c.CLIENTE || 'estimado cliente';
   let msg = `Estimado/a *${cli}*,\n\n`;
   msg += `Le escribimos de *AAM Abogados Asociados* en relación a su expediente *N° ${c.ID}*.\n\n`;
-  msg += `Para continuar con el trámite, requerimos que nos facilite la siguiente documentación pendiente:\n`;
-  
-  missing.forEach(d => {
-    msg += `• *${d.label}*\n`;
-  });
-  
-  msg += `\nPuede subir los archivos o fotos de manera rápida y segura desde su celular ingresando al siguiente enlace:\n`;
-  msg += `${linkFinal}\n\n`;
-  msg += `Quedamos a su disposición.\n*AAM · Gestión Jurídica*`;
+  msg += `Para continuar con el trámite, requerimos completar documentación pendiente de su caso. Puede adjuntar los archivos o fotos directamente desde su celular ingresando al siguiente enlace:\n\n`;
+  msg += `👉 ${linkPortal}\n\n`;
+  msg += `Quedamos a su disposición para cualquier consulta.\n*AAM · Gestión Jurídica*`;
 
   const tel = formatTelefonoWA(c.TELEFONO);
   const url = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;

@@ -312,6 +312,36 @@ function getApiEndpoint(qs = '') {
   return path + (qs ? '?' + qs : '');
 }
 
+function apiGet(qs) {
+  return new Promise((resolve, reject) => {
+    const isLocal = (window.location.port === '8100' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isLocal) {
+      fetch(getApiEndpoint(qs + '&_t=' + Date.now()))
+        .then(res => res.json())
+        .then(resolve)
+        .catch(reject);
+    } else {
+      const cb = 'cbApi_' + Math.random().toString(36).substring(2) + '_' + Date.now();
+      window[cb] = (response) => {
+        resolve(response);
+        const scriptEl = document.getElementById(cb);
+        if (scriptEl) scriptEl.remove();
+        delete window[cb];
+      };
+      const script = document.createElement('script');
+      script.id = cb;
+      script.src = getApiEndpoint(qs + `&callback=${cb}&_t=${Date.now()}`);
+      script.onerror = (err) => {
+        reject(err);
+        const scriptEl = document.getElementById(cb);
+        if (scriptEl) scriptEl.remove();
+        delete window[cb];
+      };
+      document.head.appendChild(script);
+    }
+  });
+}
+
 function fetchDataCore(cargarLoader = false) {
   if (STATE.syncLock) return;
   STATE.syncLock = true;
@@ -1231,39 +1261,18 @@ function fetchCrmTimeline(idCausa) {
   const container = document.getElementById('drawer-crm-timeline');
   container.innerHTML = `<div class="empty-log">Sincronizando novedades...</div>`;
 
-  const isLocal = (window.location.port === '8100' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-  if (isLocal) {
-    fetch(getApiEndpoint(`email=${encodeURIComponent(STATE.usuario.email)}&action=getInteracciones&idCausa=${idCausa}&_t=${Date.now()}`))
-      .then(res => res.json())
-      .then(response => {
-        if (response && response.status === 'success') {
-          renderTimelineHtml(container, response.data || []);
-        } else {
-          container.innerHTML = `<div class="empty-log" style="color: var(--rojo);">Error al cargar CRM.</div>`;
-        }
-      })
-      .catch(err => {
-        container.innerHTML = `<div class="empty-log" style="color: var(--rojo);">Error al cargar CRM.</div>`;
-      });
-  } else {
-    // Fallback JSONP
-    const cb = 'cbTimeline_' + Date.now();
-    window[cb] = (response) => {
+  apiGet(`email=${encodeURIComponent(STATE.usuario.email)}&action=getInteracciones&idCausa=${idCausa}`)
+    .then(response => {
       if (response && response.status === 'success') {
         renderTimelineHtml(container, response.data || []);
       } else {
         container.innerHTML = `<div class="empty-log" style="color: var(--rojo);">Error al cargar CRM.</div>`;
       }
-      const scriptEl = document.getElementById(cb);
-      if (scriptEl) scriptEl.remove();
-    };
-
-    const script = document.createElement('script');
-    script.id = cb;
-    script.src = getApiEndpoint(`email=${encodeURIComponent(STATE.usuario.email)}&action=getInteracciones&idCausa=${idCausa}&callback=${cb}`);
-    document.head.appendChild(script);
-  }
+    })
+    .catch(err => {
+      console.error(err);
+      container.innerHTML = `<div class="empty-log" style="color: var(--rojo);">Error al cargar CRM.</div>`;
+    });
 }
 
 function renderTimelineHtml(container, data) {
@@ -1583,8 +1592,7 @@ async function ejecutarEnvioWhatsAppFaltantes(c, missing) {
   let linkFinal = linkPortal;
   showToast('Generando enlace corto...', 'warning');
   try {
-    const res = await fetch(getApiEndpoint(`email=${encodeURIComponent(STATE.usuario.email)}&action=shorten&url=${encodeURIComponent(linkPortal)}`));
-    const data = await res.json();
+    const data = await apiGet(`email=${encodeURIComponent(STATE.usuario.email)}&action=shorten&url=${encodeURIComponent(linkPortal)}`);
     if (data && data.status === 'success' && data.shortUrl) {
       linkFinal = data.shortUrl;
     }

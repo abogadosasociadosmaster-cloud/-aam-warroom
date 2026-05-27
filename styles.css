@@ -8,23 +8,23 @@
 
 :root {
   /* -- PALETA CYBER-CLARITY (MÁS CLARA, VIVA Y LEGIBLE) -- */
-  --bg-page:        #0f1422; /* Azul grisáceo espacial, más claro, suave y limpio */
-  --bg-surface:     #1a2236; /* Tarjetas y paneles con más luminosidad y contraste */
-  --bg-surface-alt: #242f4a; /* Fondos secundarios para inputs y subsecciones */
-  --bg-sidebar:     #0c0f17; /* Sidebar con negro azulado profundo */
-  --bg-header:      #121828; /* Cabecera del cockpit definida */
+  --bg-page:        #0b0f17; /* Negro carbón mate de alta absorción */
+  --bg-surface:     #161d2b; /* Gris grafito texturado */
+  --bg-surface-alt: #212a3f; /* Gris de entrada para inputs */
+  --bg-sidebar:     #080c12; /* Sidebar negro profundo */
+  --bg-header:      #101520; /* Cabecera del cockpit unificada */
   
-  --primary:        #3b82f6; /* Azul Eléctrico */
-  --gold:           #ffd700; /* Oro Noble (Vivo y moderno) */
+  --primary:        #2563eb; /* Azul Cobalto Nórdico */
+  --gold:           #ffd700; /* Oro Noble */
   --cyan:           #06b6d4; /* Cian digital */
   --purple:         #8b5cf6; /* Violeta financiero */
   
-  --text-main:      #f9fafb; /* Blanco puro ultra brillante */
-  --text-muted:     #cbd5e1; /* Gris claro/azulado con excelente legibilidad */
-  --text-dim:       #94a3b8; /* Gris medio azulado de alto contraste */
+  --text-main:      #ffffff; /* Blanco puro */
+  --text-muted:     #cbd5e1; /* Gris claro */
+  --text-dim:       #94a3b8; /* Gris medio slate */
   
-  --border:         rgba(255, 255, 255, 0.12); /* Bordes más marcados y visibles */
-  --border-focus:   #3b82f6;
+  --border:         rgba(255, 255, 255, 0.08); /* Bordes finos pizarra */
+  --border-focus:   #2563eb;
 
   /* -- PLAZOS / ALERTAS (NEÓN GLOW) -- */
   --verde:          #10b981;
@@ -127,12 +127,24 @@ body { -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.5; }
   z-index: 100;
 }
 .brand {
-  padding: 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.brand-name { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 1.5px; }
-.brand-name span { color: var(--gold); }
-.brand-sub { font-size: 9px; color: var(--text-muted); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-top: 2px; }
+.brand-logo-img {
+  max-height: 80px;
+  width: auto;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 2px 6px rgba(197, 168, 128, 0.2));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.brand-logo-img:hover {
+  transform: scale(1.05);
+}
 
 #user-info {
   padding: 16px 24px;

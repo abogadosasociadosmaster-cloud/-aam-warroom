@@ -307,9 +307,7 @@ body { -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.5; }
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05) 0%, transparent 40%), 
-              radial-gradient(circle at bottom left, rgba(255, 215, 0, 0.02) 0%, transparent 50%), 
-              var(--bg-page);
+  background: #f4f4f5; /* Fondo claro de contraste (gris platino) */
 }
 
 .view {
@@ -909,6 +907,243 @@ body.saving-shield::after {
   .kpi-grid { grid-template-columns: 1fr; }
   .view-header-row { flex-direction: column; align-items: stretch; }
   .drawer { width: 100vw; right: -100vw; }
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #1e3a8a; /* Azul marino profundo */
+  margin-bottom: 14px;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drawer-section-title::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, #e2e8f0, transparent);
+}
+.drawer-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); }
+.drawer-grid-full { grid-column: span 2; }
+
+/* ENTRADAS DEL FORMULARIO (MODAL CLARO) */
+.field-group { display: flex; flex-direction: column; gap: 4px; }
+.field-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+.field-group input, .field-group select, .field-group textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a; /* Texto oscuro */
+  border-radius: var(--radius-sm);
+  outline: none;
+  font-size: 13px;
+  transition: var(--transition);
+}
+.field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+  border-color: #3b82f6; /* Borde azul activo */
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  color: #0f172a;
+}
+.field-group input[readonly], .field-group select[disabled] {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+/* ── ZONA DE CRONOLOGÍA (CRM TIMELINE RETRO TERMINAL) ── */
+#form-BITACORA_NEW {
+  font-family: var(--font-mono);
+  background-color: #01142f; /* Azul profundo estilo PowerShell */
+  color: #a6e22e; /* Verde brillante para entrada de texto */
+  border: 1px solid #0056b3;
+  padding: 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  caret-color: var(--gold);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+#form-BITACORA_NEW::placeholder {
+  color: rgba(166, 226, 46, 0.4);
+}
+#form-BITACORA_NEW:focus {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 215, 0, 0.25);
+  outline: none;
+}
+
+.crm-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  background-color: #010a18; /* Negro azulado DOS / PowerShell Terminal */
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  font-family: var(--font-mono);
+  max-height: 380px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+}
+.timeline-item {
+  border-left: none;
+  padding-left: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+.timeline-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.timeline-item::before {
+  display: none; /* Quitamos el círculo del timeline clásico */
+}
+.timeline-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.timeline-date {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #00ffff; /* Cian brillante estilo consola */
+  font-weight: bold;
+}
+.timeline-type {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--font-main); /* Tipografía limpia para badges */
+}
+.timeline-type.SISTEMA { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.timeline-type.WHATSAPP { background: rgba(37, 211, 102, 0.2); color: #4ade80; border: 1px solid rgba(37, 211, 102, 0.3); }
+.timeline-type.CRM { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.timeline-desc {
+  font-size: 12.5px;
+  color: #f8fafc; /* Texto blanco brillante de terminal */
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── COHESIÓN DEL SISTEMA BLINDADO ── */
+body.saving-shield::after {
+  content: '🛡️ REGISTRANDO DATOS EN NUBE...';
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 22, 0.95);
+  backdrop-filter: blur(6px);
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  animation: savedPulse 1.5s infinite ease-in-out;
+}
+@keyframes savedPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); } }
+
+/* ── AGENDA Y VENCIMIENTOS (LEGAL) ── */
+.alert-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.alert-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--text-dim);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alert-card.alert-ROJO { border-left-color: var(--rojo); background: linear-gradient(135deg, rgba(244, 63, 94, 0.03) 0%, transparent 100%); }
+.alert-card.alert-AMARILLO { border-left-color: var(--amarillo); background: linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, transparent 100%); }
+.alert-card.alert-VERDE { border-left-color: var(--verde); background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, transparent 100%); }
+
+.alert-card-header { display: flex; justify-content: space-between; align-items: center; }
+.alert-card-title { font-weight: 800; font-size: 14.5px; color: #fff; }
+.alert-card-sub { font-size: 11.5px; color: var(--text-muted); }
+.alert-card-time { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #fff; background: rgba(255, 255, 255, 0.05); padding: 1px 6px; border-radius: 4px; }
+
+/* TOAST */
+#toast {
+  position: fixed;
+  top: 20px; right: 20px;
+  padding: 12px 24px;
+  background: #0c0f1b;
+  color: #fff;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-100px);
+  transition: transform 0.3s ease-out;
+  z-index: 3000;
+  font-weight: 600;
+}
+#toast.show { transform: translateY(0); }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  #app { grid-template-columns: 1fr; }
+  #sidebar { display: none; }
+  .cockpit-header { grid-template-columns: 1fr; gap: 10px; }
+  .header-actions-section { justify-content: space-between; width: 100%; }
+  .view { padding: 15px; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .view-header-row { flex-direction: column; align-items: stretch; }
+  .drawer { width: 100vw; right: -100vw; }
   .drawer-tabs { overflow-x: auto; }
   .drawer-tab { min-width: 90px; }
+}
+
+/* ── RESTRICCIONES VISUALES ROL CARGA (FRANCO PUENTE) ── */
+.role-carga #sidebar .nav-menu li[data-view="contable"],
+.role-carga .drawer-tabs .drawer-tab[data-tab="contable"] {
+  display: none !important;
+}
+
+/* ── AUTOCOMPLETADO DE CLIENTES ── */
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.98);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  margin-top: 4px;
+}
+
+.autocomplete-suggestion-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e2e8f0;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.autocomplete-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-suggestion-item:hover {
+  background: rgba(212, 160, 23, 0.15);
+  color: #fff;
+  padding-left: 18px;
 }

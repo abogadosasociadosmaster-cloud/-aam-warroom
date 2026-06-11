@@ -175,6 +175,159 @@ function inicializarEventos() {
     drawerForm.addEventListener('change', evaluarEstadoSugeridoFronend);
     drawerForm.addEventListener('input', evaluarEstadoSugeridoFronend);
   }
+
+  // Inicializar autocompletados (Clientes y Aseguradoras)
+  inicializarAutocompletados();
+}
+
+function inicializarAutocompletados() {
+  // 1. Poblar el datalist de Aseguradoras
+  const dlAseguradoras = document.getElementById('datalist-aseguradoras');
+  if (dlAseguradoras && window.CAT_ASEGURADORAS) {
+    let html = '';
+    window.CAT_ASEGURADORAS.forEach(ase => {
+      html += `<option value="${ase.razonSocial}">CUIT: ${ase.cuit}</option>`;
+    });
+    dlAseguradoras.innerHTML = html;
+  }
+
+  // 2. Escuchador de Autocompletado para el Cliente
+  const inputCliente = document.getElementById('form-CLIENTE');
+  const suggestionsDiv = document.getElementById('autocomplete-clientes-suggestions');
+
+  if (inputCliente && suggestionsDiv) {
+    inputCliente.addEventListener('input', () => {
+      const valor = inputCliente.value.trim().toLowerCase();
+      if (valor.length < 3) {
+        suggestionsDiv.style.display = 'none';
+        suggestionsDiv.innerHTML = '';
+        return;
+      }
+
+      // Buscar en las causas cargadas en memoria (STATE.causas)
+      const clientesUnicos = {};
+      STATE.causas.forEach(c => {
+        if (c.CLIENTE && c.CLIENTE.trim().toLowerCase().includes(valor)) {
+          const nombreNormalizado = c.CLIENTE.trim();
+          // Guardar el mas completo que encontremos (el que tenga DNI, tel, etc.)
+          if (!clientesUnicos[nombreNormalizado.toLowerCase()] || 
+              (!clientesUnicos[nombreNormalizado.toLowerCase()].DNI_NRO && c.DNI_NRO)) {
+            clientesUnicos[nombreNormalizado.toLowerCase()] = {
+              nombre: nombreNormalizado,
+              dni: c.DNI_NRO || '',
+              telefono: c.TELEFONO || '',
+              email: c.EMAIL_CLIENTE || '',
+              domicilio: c.DOMICILIO || ''
+            };
+          }
+        }
+      });
+
+      const resultados = Object.values(clientesUnicos);
+
+      if (resultados.length === 0) {
+        suggestionsDiv.style.display = 'none';
+        suggestionsDiv.innerHTML = '';
+        return;
+      }
+
+      // Renderizar sugerencias
+      let htmlSug = '';
+      resultados.forEach(res => {
+        const dniLabel = res.dni ? ` - DNI: ${res.dni}` : '';
+        htmlSug += `
+          <div class="autocomplete-suggestion-item" data-nombre="${res.nombre}" data-dni="${res.dni}" data-telefono="${res.telefono}" data-email="${res.email}" data-domicilio="${res.domicilio}">
+            <strong>${res.nombre}</strong><span style="font-size: 11px; color: #64748b; margin-left: 5px;">${dniLabel}</span>
+          </div>
+        `;
+      });
+      suggestionsDiv.innerHTML = htmlSug;
+      suggestionsDiv.style.display = 'block';
+
+      // Evento clic en cada sugerencia
+      suggestionsDiv.querySelectorAll('.autocomplete-suggestion-item').forEach(item => {
+        item.addEventListener('click', () => {
+          inputCliente.value = item.getAttribute('data-nombre');
+          
+          // Auto-completar los inputs de identidad
+          const dni = item.getAttribute('data-dni');
+          const tel = item.getAttribute('data-telefono');
+          const email = item.getAttribute('data-email');
+          const dom = item.getAttribute('data-domicilio');
+
+          if (document.getElementById('form-DNI_NRO') && dni) {
+            document.getElementById('form-DNI_NRO').value = dni;
+          }
+          if (document.getElementById('form-TELEFONO') && tel) {
+            document.getElementById('form-TELEFONO').value = tel;
+          }
+          if (document.getElementById('form-EMAIL_CLIENTE') && email) {
+            document.getElementById('form-EMAIL_CLIENTE').value = email;
+          }
+          if (document.getElementById('form-DOMICILIO') && dom) {
+            document.getElementById('form-DOMICILIO').value = dom;
+          }
+
+          suggestionsDiv.style.display = 'none';
+          suggestionsDiv.innerHTML = '';
+          
+          // Evaluar si esto sugiere cambios en el frontend
+          evaluarEstadoSugeridoFronend();
+        });
+      });
+    });
+
+    // Cerrar sugerencias al hacer clic afuera
+    document.addEventListener('click', (e) => {
+      if (e.target !== inputCliente && e.target !== suggestionsDiv) {
+        suggestionsDiv.style.display = 'none';
+      }
+    });
+
+    // Autocompletado secundario por pérdida de foco (coincidencia exacta al cambiar de campo)
+    inputCliente.addEventListener('blur', () => {
+      setTimeout(() => {
+        const valor = inputCliente.value.trim().toLowerCase();
+        if (valor.length === 0) return;
+        
+        // Buscar el último registro coincidente de ese cliente
+        const causaCoincidente = STATE.causas.find(c => c.CLIENTE && c.CLIENTE.trim().toLowerCase() === valor);
+        if (causaCoincidente) {
+          const dniEl = document.getElementById('form-DNI_NRO');
+          const telEl = document.getElementById('form-TELEFONO');
+          const emailEl = document.getElementById('form-EMAIL_CLIENTE');
+          const domEl = document.getElementById('form-DOMICILIO');
+
+          if (dniEl && !dniEl.value) dniEl.value = causaCoincidente.DNI_NRO || '';
+          if (telEl && !telEl.value) telEl.value = causaCoincidente.TELEFONO || '';
+          if (emailEl && !emailEl.value) emailEl.value = causaCoincidente.EMAIL_CLIENTE || '';
+          if (domEl && !domEl.value) domEl.value = causaCoincidente.DOMICILIO || '';
+          
+          evaluarEstadoSugeridoFronend();
+        }
+      }, 200); // 200ms de retraso para no bloquear el clic de las sugerencias
+    });
+  }
+}
+
+function obtenerRazonSocialAseguradora(nombreCia) {
+  if (!nombreCia) return '—';
+  const busqueda = nombreCia.trim().toLowerCase();
+  
+  if (window.CAT_ASEGURADORAS) {
+    const ciaEncontrada = window.CAT_ASEGURADORAS.find(ase => {
+      const normalizadoCatalogo = ase.razonSocial.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const normalizadoBusqueda = busqueda.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      return normalizadoCatalogo === normalizadoBusqueda || 
+             normalizadoCatalogo.includes(normalizadoBusqueda) || 
+             normalizadoBusqueda.includes(normalizadoCatalogo);
+    });
+    if (ciaEncontrada) {
+      return ciaEncontrada.razonSocial;
+    }
+  }
+  return nombreCia;
 }
 
 // Lógica de cambio de pestañas dentro de la ficha del Drawer
@@ -224,7 +377,15 @@ function handlerLogin() {
 }
 
 function intentarAutologin() {
-  const emailGuardado = localStorage.getItem('AAM26_OPERADOR_EMAIL_V3');
+  let emailGuardado = localStorage.getItem('AAM26_OPERADOR_EMAIL_V3');
+  
+  if (!emailGuardado && window.DEFAULT_OPERADOR_EMAIL) {
+    emailGuardado = window.DEFAULT_OPERADOR_EMAIL.trim().toLowerCase();
+    if (CAT_USUARIOS[emailGuardado]) {
+      localStorage.setItem('AAM26_OPERADOR_EMAIL_V3', emailGuardado);
+    }
+  }
+
   if (emailGuardado && CAT_USUARIOS[emailGuardado]) {
     STATE.usuario = { email: emailGuardado, ...CAT_USUARIOS[emailGuardado] };
     entrarAlApp();
@@ -235,6 +396,12 @@ function entrarAlApp() {
   // Ajustar interfaz según rol
   document.getElementById('user-nombre').textContent = STATE.usuario.nombre;
   document.getElementById('user-rol').textContent = STATE.usuario.rol.replace(/_/g, ' ');
+  
+  if (STATE.usuario.rol === 'CARGA') {
+    document.body.classList.add('role-carga');
+  } else {
+    document.body.classList.remove('role-carga');
+  }
   
   // Mostrar / Ocultar controles según privilegios
   const esSuperior = (STATE.usuario.rol === 'SUPERVISOR_GRAL' || STATE.usuario.rol === 'SUPERVISOR_OP');
@@ -732,7 +899,7 @@ function applyFiltersOps() {
     html += `<tr onclick="openDrawerFicha('${c.ID}')">
       <td class="cell-id">${c.ID}</td>
       <td class="cell-cliente">${c.CLIENTE || '—'}</td>
-      <td>${c.RECLAMADO_A || '—'}</td>
+      <td>${obtenerRazonSocialAseguradora(c.RECLAMADO_A)}</td>
       <td>
         ${c.ESTADO === 'PENDIENTE_DOCS' ? `
           <span class="status-chip clickable-wa-status" 
@@ -1911,10 +2078,14 @@ function aplicarRestriccionesRolFicha() {
 
   // Si es un operador de CARGA editando una causa existente
   if (esCarga && isEdit) {
+    const camposClienteCarga = [
+      'CLIENTE', 'DNI_NRO', 'TELEFONO', 'EMAIL_CLIENTE', 'DOMICILIO', 
+      'RECLAMADO_A', 'NRO_SINIESTRO', 'FECHA_HECHO', 'COMPETENCIA'
+    ];
     form.querySelectorAll('input, select, textarea').forEach(el => {
       const name = el.getAttribute('name') || el.id.replace('form-', '');
       const esDoc = DOCS_LIST.some(d => d.id === name);
-      const esPermitido = esDoc || name === 'OBSERVACIONES' || name === 'DOCS_ESPECIFICOS' || name === 'BITACORA_NEW';
+      const esPermitido = esDoc || camposClienteCarga.includes(name) || name === 'OBSERVACIONES' || name === 'DOCS_ESPECIFICOS' || name === 'BITACORA_NEW';
       
       if (!esPermitido) {
         el.disabled = true;

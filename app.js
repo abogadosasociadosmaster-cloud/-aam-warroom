@@ -102,11 +102,27 @@ const CAMPOS_FECHA = [
 ];
 
 // ══════════════════════════════════════════════════════════
+// CATÁLOGO DE CATEGORÍAS CONTABLES (LIBRO DE ANOTACIONES)
+// ══════════════════════════════════════════════════════════
+const CAT_CONTABLE = {
+  HONORARIOS:   { label: 'Honorarios',   color: '#10b981' },
+  ALQUILER:     { label: 'Alquiler',     color: '#a1a1aa' },
+  SUELDOS:      { label: 'Sueldos',      color: '#3b82f6' },
+  PROCURACION:  { label: 'Procuración',  color: '#8b5cf6' },
+  SERVICIOS:    { label: 'Servicios',    color: '#06b6d4' },
+  INSUMOS:      { label: 'Insumos',      color: '#f59e0b' },
+  MARKETING:    { label: 'Marketing',    color: '#ec4899' },
+  IMPUESTOS:    { label: 'Impuestos',    color: '#f43f5e' },
+  OTROS:        { label: 'Otros',        color: '#6b7280' }
+};
+
+// ══════════════════════════════════════════════════════════
 // ESTADO OPERATIVO CENTRAL (CORTEX)
 // ══════════════════════════════════════════════════════════
 const STATE = {
   usuario: null,         // Datos del operador actual
   causas: [],           // Listado de causas en memoria
+  anotaciones: [],      // Libro de anotaciones contables (ingresos/egresos del estudio)
   causaActual: null,     // Causa abierta en el panel lateral
   vista: 'ops',          // Vista actual ('ops', 'legal', 'contable', 'auditoria')
   params: { cpccyt: {}, feriados: [] },
@@ -146,6 +162,7 @@ function inicializarEventos() {
   // Recarga manual
   document.getElementById('btn-recargar-datos').addEventListener('click', () => {
     fetchDataCore(false);
+    fetchAnotaciones();
   });
 
   // Búsqueda global reactiva
@@ -160,6 +177,17 @@ function inicializarEventos() {
 
   document.getElementById('filter-legal-abogado').addEventListener('change', applyFiltersLegal);
   document.getElementById('filter-legal-semaforo').addEventListener('change', applyFiltersLegal);
+
+  // Módulo de Anotaciones Contables (libro general del estudio)
+  const btnNuevaAnot = document.getElementById('btn-nueva-anotacion');
+  if (btnNuevaAnot) btnNuevaAnot.addEventListener('click', openModalNuevaAnotacion);
+
+  const filtAnotMes = document.getElementById('filter-anot-mes');
+  const filtAnotCat = document.getElementById('filter-anot-categoria');
+  const filtAnotTipo = document.getElementById('filter-anot-tipo');
+  if (filtAnotMes) filtAnotMes.addEventListener('change', applyFiltersAnotaciones);
+  if (filtAnotCat) filtAnotCat.addEventListener('change', applyFiltersAnotaciones);
+  if (filtAnotTipo) filtAnotTipo.addEventListener('change', applyFiltersAnotaciones);
 
   // Pestañas locales del Drawer (Slide Ficha)
   document.querySelectorAll('.drawer-tabs .drawer-tab').forEach(tabBtn => {
@@ -423,6 +451,7 @@ function entrarAlApp() {
   // Cargar datos
   fetchDataCore(true);
   fetchReglasYHeaders();
+  fetchAnotaciones();
 }
 
 function toggleDirectorMode() {
@@ -452,8 +481,10 @@ function toggleDirectorMode() {
 }
 
 function aplicarEnmascaramientoVisual(debeEnmascarar) {
-  const kpis = ['kpi-total-ofertado-mask', 'kpi-total-ingresos-mask', 'kpi-total-gastos-mask', 'kpi-total-neto-mask'];
-  const values = ['kpi-total-ofertado', 'kpi-total-ingresos', 'kpi-total-gastos', 'kpi-total-neto'];
+  const kpis = ['kpi-total-ofertado-mask', 'kpi-total-ingresos-mask', 'kpi-total-gastos-mask', 'kpi-total-neto-mask',
+                'kpi-anot-ingresos-mask', 'kpi-anot-egresos-mask', 'kpi-anot-resultado-mask', 'kpi-anot-acumulado-mask'];
+  const values = ['kpi-total-ofertado', 'kpi-total-ingresos', 'kpi-total-gastos', 'kpi-total-neto',
+                   'kpi-anot-ingresos', 'kpi-anot-egresos', 'kpi-anot-resultado', 'kpi-anot-acumulado'];
   
   kpis.forEach((maskId, idx) => {
     const mask = document.getElementById(maskId);
@@ -754,6 +785,10 @@ function switchView(viewName) {
       titleMain.innerHTML = 'Motor <span>Contable</span>';
       subtitleMain.textContent = 'Liquidación de Expedientes y Caja Neta';
       break;
+    case 'anotaciones':
+      titleMain.innerHTML = 'Libro de <span>Anotaciones Contables</span>';
+      subtitleMain.textContent = 'Ingresos y Egresos Generales del Estudio';
+      break;
     case 'auditoria':
       titleMain.innerHTML = 'Trazabilidad <span>Bitácora CRM</span>';
       subtitleMain.textContent = 'Historial General y Auditoría de Procesos';
@@ -776,6 +811,9 @@ function renderVistaActiva() {
       break;
     case 'contable':
       renderVistaContable();
+      break;
+    case 'anotaciones':
+      renderVistaAnotaciones();
       break;
     case 'auditoria':
       renderVistaAuditoria();
@@ -1092,6 +1130,250 @@ function parseMonto(val) {
 function formatMonto(num) {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
 }
+
+// ══════════════════════════════════════════════════════════
+// RENDER Y PERSISTENCIA: LIBRO DE ANOTACIONES CONTABLES (AAM26-ANOTACIONES)
+// Libro general del estudio, independiente de las causas: ingresos y
+// egresos propios (alquiler, sueldos, procuración, servicios, etc.)
+// ══════════════════════════════════════════════════════════
+function fetchAnotaciones() {
+  if (!STATE.usuario) return;
+  apiGet(`email=${encodeURIComponent(STATE.usuario.email)}&action=listarAnotaciones`)
+    .then(response => {
+      if (response && response.status === 'success') {
+        STATE.anotaciones = (response.data || []).map(a => {
+          if (a.FECHA) {
+            try {
+              const d = new Date(a.FECHA);
+              if (!isNaN(d.getTime())) a.FECHA = d.toISOString().split('T')[0];
+            } catch (e) { /* deja la fecha como vino */ }
+          }
+          return a;
+        });
+        llenarSelectorMesesAnotaciones();
+        const badge = document.getElementById('badge-anotaciones');
+        if (badge) badge.textContent = STATE.anotaciones.length;
+        if (STATE.vista === 'anotaciones') renderVistaAnotaciones();
+      }
+    })
+    .catch(err => console.error('Error al cargar anotaciones contables:', err));
+}
+
+function llenarSelectorMesesAnotaciones() {
+  const sel = document.getElementById('filter-anot-mes');
+  if (!sel) return;
+  const valorActual = sel.value;
+  const meses = new Set();
+  STATE.anotaciones.forEach(a => {
+    if (a.FECHA) meses.add(a.FECHA.substring(0, 7));
+  });
+  let html = '<option value="">[ TODOS LOS MESES ]</option>';
+  [...meses].sort().reverse().forEach(m => {
+    const [y, mm] = m.split('-');
+    const nombreMes = new Date(y, parseInt(mm, 10) - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    html += `<option value="${m}">${nombreMes}</option>`;
+  });
+  sel.innerHTML = html;
+  if ([...meses].includes(valorActual)) sel.value = valorActual;
+}
+
+function renderVistaAnotaciones() {
+  const esSuperior = (STATE.usuario.rol === 'SUPERVISOR_GRAL' || STATE.usuario.rol === 'SUPERVISOR_OP');
+  const mostrarCajas = esSuperior || STATE.modoDirector;
+
+  const hoy = new Date();
+  const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+  const anioActual = String(hoy.getFullYear());
+
+  // KPIs: siempre calculados sobre el total (no sobre el filtro de tabla)
+  let ingresosMes = 0, egresosMes = 0, acumuladoAnual = 0;
+  STATE.anotaciones.forEach(a => {
+    const monto = parseMonto(a.MONTO);
+    const esDelMes = a.FECHA && a.FECHA.substring(0, 7) === mesActual;
+    const esDelAnio = a.FECHA && a.FECHA.substring(0, 4) === anioActual;
+    const signo = a.TIPO === 'EGRESO' ? -1 : 1;
+    if (esDelMes) {
+      if (a.TIPO === 'EGRESO') egresosMes += monto; else ingresosMes += monto;
+    }
+    if (esDelAnio) acumuladoAnual += signo * monto;
+  });
+  const resultadoMes = ingresosMes - egresosMes;
+
+  const elIng = document.getElementById('kpi-anot-ingresos');
+  const elEgr = document.getElementById('kpi-anot-egresos');
+  const elRes = document.getElementById('kpi-anot-resultado');
+  const elAcu = document.getElementById('kpi-anot-acumulado');
+  if (elIng) elIng.textContent = formatMonto(ingresosMes);
+  if (elEgr) elEgr.textContent = formatMonto(egresosMes);
+  if (elRes) elRes.textContent = formatMonto(resultadoMes);
+  if (elAcu) elAcu.textContent = formatMonto(acumuladoAnual);
+
+  aplicarEnmascaramientoVisual(!mostrarCajas);
+
+  applyFiltersAnotaciones();
+}
+
+function applyFiltersAnotaciones() {
+  const term = document.getElementById('global-search-input').value.toLowerCase().trim();
+  const filtroMes = document.getElementById('filter-anot-mes').value;
+  const filtroCat = document.getElementById('filter-anot-categoria').value;
+  const filtroTipo = document.getElementById('filter-anot-tipo').value;
+  const esSuperior = (STATE.usuario.rol === 'SUPERVISOR_GRAL' || STATE.usuario.rol === 'SUPERVISOR_OP');
+  const mostrarCajas = esSuperior || STATE.modoDirector;
+
+  // Rellenar selector de categorías la primera vez
+  const selCat = document.getElementById('filter-anot-categoria');
+  if (selCat && selCat.options.length <= 1) {
+    let hCat = '<option value="">[ TODAS LAS CATEGORÍAS ]</option>';
+    Object.keys(CAT_CONTABLE).forEach(key => {
+      hCat += `<option value="${key}">${CAT_CONTABLE[key].label}</option>`;
+    });
+    selCat.innerHTML = hCat;
+  }
+
+  const filtered = STATE.anotaciones.filter(a => {
+    if (term) {
+      const match = String(a.DESCRIPCION || '').toLowerCase().includes(term) ||
+                    String(a.ID_CAUSA || '').toLowerCase().includes(term) ||
+                    String(a.OPERADOR || '').toLowerCase().includes(term);
+      if (!match) return false;
+    }
+    if (filtroMes && (!a.FECHA || a.FECHA.substring(0, 7) !== filtroMes)) return false;
+    if (filtroCat && a.CATEGORIA !== filtroCat) return false;
+    if (filtroTipo && a.TIPO !== filtroTipo) return false;
+    return true;
+  });
+
+  // Ordenar por fecha descendente
+  filtered.sort((a, b) => String(b.FECHA || '').localeCompare(String(a.FECHA || '')));
+
+  const tbody = document.getElementById('tbody-anotaciones');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">No hay anotaciones contables cargadas con los filtros aplicados.</td></tr>`;
+    return;
+  }
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+
+  let html = '';
+  filtered.forEach(a => {
+    const catObj = CAT_CONTABLE[a.CATEGORIA] || { label: a.CATEGORIA || '—', color: '#6b7280' };
+    const fechaFmt = a.FECHA ? new Date(a.FECHA).toLocaleDateString('es-AR') : '—';
+    const monto = parseMonto(a.MONTO);
+    let montoCell = formatMonto(monto);
+    if (!mostrarCajas) montoCell = `<span class="masked-amount">$ ***</span>`;
+    const tipoClase = a.TIPO === 'EGRESO' ? 'tipo-egreso' : 'tipo-ingreso';
+    const tipoLabel = a.TIPO === 'EGRESO' ? 'Egreso' : 'Ingreso';
+
+    html += `<tr>
+      <td class="mono">${fechaFmt}</td>
+      <td><span class="cat-chip" style="background:${catObj.color}18;border:1px solid ${catObj.color}35;color:${catObj.color};">${esc(catObj.label)}</span></td>
+      <td class="${tipoClase}">${tipoLabel}</td>
+      <td class="cell-monto">${montoCell}</td>
+      <td>${esc(a.DESCRIPCION || '—')}</td>
+      <td>${a.ID_CAUSA ? `<a href="#" onclick="openDrawerFicha('${esc(a.ID_CAUSA)}'); return false;" style="color: var(--gold); text-decoration: underline; font-family: var(--font-mono);">${esc(a.ID_CAUSA)}</a>` : '<span style="color: var(--text-dim);">—</span>'}</td>
+      <td>${esc(a.OPERADOR || 'Estudio AAM')}</td>
+      <td style="text-align: right;">
+        <button class="btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="window.eliminarAnotacion('${esc(a.ID)}')">🗑️ QUITAR</button>
+      </td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function openModalNuevaAnotacion() {
+  const form = document.getElementById('form-anotacion');
+  if (form) form.reset();
+  const fechaInput = document.getElementById('anot-FECHA');
+  if (fechaInput) fechaInput.value = new Date().toISOString().split('T')[0];
+
+  document.getElementById('modal-anot-overlay').classList.add('active');
+  document.getElementById('modal-anot').classList.add('open');
+}
+
+function closeModalNuevaAnotacion() {
+  document.getElementById('modal-anot-overlay').classList.remove('active');
+  document.getElementById('modal-anot').classList.remove('open');
+}
+
+function guardarAnotacion() {
+  if (STATE.syncLock) return;
+
+  const datos = {
+    FECHA: document.getElementById('anot-FECHA').value,
+    TIPO: document.getElementById('anot-TIPO').value,
+    CATEGORIA: document.getElementById('anot-CATEGORIA').value,
+    MONTO: document.getElementById('anot-MONTO').value,
+    DESCRIPCION: document.getElementById('anot-DESCRIPCION').value,
+    ID_CAUSA: document.getElementById('anot-ID_CAUSA').value.trim(),
+    OPERADOR: STATE.usuario.nombre
+  };
+
+  if (!datos.FECHA || !datos.MONTO || Number(datos.MONTO) <= 0) {
+    showToast('Completá al menos la fecha y un monto válido.', 'warning');
+    return;
+  }
+
+  document.body.classList.add('saving-shield');
+  STATE.syncLock = true;
+
+  fetch(getApiEndpoint(), {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'crearAnotacion',
+      email: STATE.usuario.email,
+      datos: datos
+    })
+  }).then(() => {
+    showToast('Anotación contable guardada correctamente.');
+    setTimeout(() => {
+      document.body.classList.remove('saving-shield');
+      STATE.syncLock = false;
+      closeModalNuevaAnotacion();
+      fetchAnotaciones();
+    }, 1500);
+  }).catch(err => {
+    document.body.classList.remove('saving-shield');
+    STATE.syncLock = false;
+    showToast('Error al guardar la anotación: ' + err.message, 'error');
+  });
+}
+
+window.eliminarAnotacion = function(idAnotacion) {
+  if (STATE.syncLock) return;
+  if (!confirm('¿Está seguro de quitar esta anotación contable? Esta acción no se puede deshacer.')) return;
+
+  document.body.classList.add('saving-shield');
+  STATE.syncLock = true;
+
+  fetch(getApiEndpoint(), {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'eliminarAnotacion',
+      email: STATE.usuario.email,
+      idAnotacion: idAnotacion
+    })
+  }).then(() => {
+    showToast('Anotación eliminada.');
+    setTimeout(() => {
+      document.body.classList.remove('saving-shield');
+      STATE.syncLock = false;
+      fetchAnotaciones();
+    }, 1500);
+  }).catch(err => {
+    document.body.classList.remove('saving-shield');
+    STATE.syncLock = false;
+    showToast('Error al eliminar la anotación: ' + err.message, 'error');
+  });
+};
 
 // ══════════════════════════════════════════════════════════
 // RENDER MÓDULO AUDITORÍA Y CRM (AAM26-AUDIT)

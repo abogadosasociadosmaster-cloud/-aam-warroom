@@ -16,16 +16,16 @@
     <div class="login-box">
       <div class="login-logo">MEGA<span>ESTRUCTURA</span></div>
       <div class="login-subtitle">AAM26 · Control Panel v3</div>
-      
+
       <div class="field-group">
         <label class="login-label">Email del Operador</label>
         <input type="email" id="login-email" placeholder="operador@estudio.com" autocomplete="email">
       </div>
-      
+
       <button class="btn-solid" id="btn-login" style="width: 100%; justify-content: center; height: 50px;">
         🔒 INGRESAR AL COLECTOR
       </button>
-      
+
       <div class="login-error" id="login-error"></div>
     </div>
   </div>
@@ -65,6 +65,11 @@
         <li class="nav-item" data-view="contable">
           <span class="nav-icon">💰</span>
           <span>Módulo Contable</span>
+        </li>
+        <li class="nav-item" data-view="anotaciones">
+          <span class="nav-icon">📒</span>
+          <span>Anotaciones Contables</span>
+          <span class="badge" id="badge-anotaciones">0</span>
         </li>
         <li class="nav-item" data-view="auditoria">
           <span class="nav-icon">📝</span>
@@ -271,6 +276,81 @@
       </div>
 
       <!-- ══════════════════════════════════════════
+           VISTA: ANOTACIONES CONTABLES (LIBRO GENERAL DEL ESTUDIO)
+           ══════════════════════════════════════════ -->
+      <div id="view-anotaciones" class="view">
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-proyectado">
+            <span class="kpi-label">Ingresos del Mes</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-anot-ingresos">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-anot-ingresos-mask">Reservado</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-gastos">
+            <span class="kpi-label">Egresos del Mes</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-anot-egresos">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-anot-egresos-mask">Reservado</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-neto">
+            <span class="kpi-label">Resultado del Mes</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-anot-resultado">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-anot-resultado-mask">Reservado</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-ingresos">
+            <span class="kpi-label">Acumulado Anual</span>
+            <div class="masked-amount-container">
+              <div class="kpi-value" id="kpi-anot-acumulado">$ 0</div>
+              <div class="masked-amount-badge hidden" id="kpi-anot-acumulado-mask">Reservado</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="view-header-row">
+          <div class="filters-panel">
+            <select id="filter-anot-mes">
+              <option value="">[ TODOS LOS MESES ]</option>
+            </select>
+            <select id="filter-anot-categoria">
+              <option value="">[ TODAS LAS CATEGORÍAS ]</option>
+            </select>
+            <select id="filter-anot-tipo">
+              <option value="">[ INGRESOS Y EGRESOS ]</option>
+              <option value="INGRESO">Solo Ingresos</option>
+              <option value="EGRESO">Solo Egresos</option>
+            </select>
+          </div>
+          <button class="btn-solid" id="btn-nueva-anotacion">➕ NUEVA ANOTACIÓN</button>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table class="responsive-table-mobile">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Categoría</th>
+                  <th>Tipo</th>
+                  <th style="text-align: right;">Monto</th>
+                  <th>Descripción</th>
+                  <th>Causa</th>
+                  <th>Operador</th>
+                  <th style="text-align: right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-anotaciones">
+                <!-- Carga dinámica -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
            VISTA: BITÁCORA Y CRM (AUDITORÍA)
            ══════════════════════════════════════════ -->
       <div id="view-auditoria" class="view">
@@ -301,7 +381,7 @@
        PANEL LATERAL CORREDIZO TABULADO (DRAWER DE FICHA)
        ══════════════════════════════════════════ -->
   <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawerFicha()"></div>
-  
+
   <div class="drawer" id="drawer-ficha">
     <div class="drawer-header">
       <div class="drawer-header-title">
@@ -327,7 +407,7 @@
     <div class="drawer-body">
       <form id="drawer-form">
         <input type="hidden" id="form-ID_CAUSA" name="ID_CAUSA">
-        
+
         <!-- PESTAÑA: IDENTIDAD -->
         <div class="drawer-tab-content active" id="tab-identidad">
           <div class="drawer-section">
@@ -587,6 +667,63 @@
       <button class="btn-outline" onclick="closeDrawerFicha()">CANCELAR</button>
       <button class="btn-wa" id="btn-wa-drawer" onclick="enviarReporteWhatsApp()" style="display: none;">💬 ENVIAR WHATSAPP</button>
       <button class="btn-solid" id="btn-guardar-drawer" onclick="saveCausaData()">💾 GUARDAR EXPEDIENTE</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       MODAL: NUEVA ANOTACIÓN CONTABLE (LIBRO GENERAL)
+       ══════════════════════════════════════════ -->
+  <div class="drawer-overlay" id="modal-anot-overlay" onclick="closeModalNuevaAnotacion()"></div>
+
+  <div class="modal-anot" id="modal-anot">
+    <div class="modal-anot-header">
+      <h3>Nueva Anotación Contable</h3>
+      <button type="button" onclick="closeModalNuevaAnotacion()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div class="modal-anot-body">
+      <form id="form-anotacion">
+        <div class="field-group" style="margin-bottom:14px;">
+          <label>Fecha</label>
+          <input type="date" id="anot-FECHA" name="FECHA">
+        </div>
+        <div class="field-group" style="margin-bottom:14px;">
+          <label>Tipo</label>
+          <select id="anot-TIPO" name="TIPO">
+            <option value="INGRESO">Ingreso</option>
+            <option value="EGRESO">Egreso</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:14px;">
+          <label>Categoría</label>
+          <select id="anot-CATEGORIA" name="CATEGORIA">
+            <option value="HONORARIOS">Honorarios</option>
+            <option value="ALQUILER">Alquiler</option>
+            <option value="SUELDOS">Sueldos</option>
+            <option value="PROCURACION">Procuración</option>
+            <option value="SERVICIOS">Servicios</option>
+            <option value="INSUMOS">Insumos</option>
+            <option value="MARKETING">Marketing</option>
+            <option value="IMPUESTOS">Impuestos</option>
+            <option value="OTROS">Otros</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:14px;">
+          <label>Monto ($)</label>
+          <input type="number" id="anot-MONTO" name="MONTO" placeholder="0">
+        </div>
+        <div class="field-group" style="margin-bottom:14px;">
+          <label>Descripción</label>
+          <input type="text" id="anot-DESCRIPCION" name="DESCRIPCION" placeholder="Detalle del movimiento">
+        </div>
+        <div class="field-group" style="margin-bottom:14px;">
+          <label>ID Causa (opcional)</label>
+          <input type="text" id="anot-ID_CAUSA" name="ID_CAUSA" placeholder="ej: C-0231, dejar vacío si no aplica">
+        </div>
+      </form>
+    </div>
+    <div class="modal-anot-footer">
+      <button class="btn-outline" onclick="closeModalNuevaAnotacion()">CANCELAR</button>
+      <button class="btn-solid" onclick="guardarAnotacion()">💾 GUARDAR ANOTACIÓN</button>
     </div>
   </div>
 

@@ -1473,7 +1473,8 @@ function openDrawerFicha(idCausa) {
   if (!c) return;
 
   STATE.causaActual = c;
-  
+  document.getElementById('form-ID_CAUSA').value = c.ID;
+
   // Actualizar Títulos de Ficha
   document.getElementById('drawer-title-nombre').textContent = c.CLIENTE || 'EXPEDIENTE';
   document.getElementById('drawer-title-id').textContent = `ID: ${c.ID}`;
